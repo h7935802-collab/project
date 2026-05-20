@@ -29,5 +29,8 @@ else
     echo "WARNING: DATABASE_URL not set, using default config"
 fi
 
+# Run database migration
+php /var/www/html/init_db.php
+
 # Start Apache
 exec apache2-foreground

@@ -1,0 +1,8 @@
+{
+  "name": "ems-db",
+  "ownerId": "tea-d3udo3ili9vc73c1lfv0",
+  "plan": "free",
+  "version": "15",
+  "databaseName": "ems",
+  "databaseUser": "ems_user"
+}
