@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y libpq-dev \
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN echo "PassEnv DATABASE_URL" >> /etc/apache2/apache2.conf
 
 # نسخ ملفات المشروع بالكامل إلى داخل الحاوية (Container)
 COPY . /var/www/html/
@@ -20,5 +19,11 @@ COPY . /var/www/html/
 # إعطاء الصلاحيات المناسبة للملفات والمجلدات
 RUN chown -R www-data:www-data /var/www/html
 
+# جعل سكريبت الإقلاع قابل للتنفيذ
+RUN chmod +x /var/www/html/docker-entrypoint.sh
+
 # فتح المنفذ 80 الذي يشتغل عليه Apache تلقائياً
 EXPOSE 80
+
+# استخدام سكريبت الإقلاع المخصص الذي يحقن متغيرات البيئة في Apache
+CMD ["/var/www/html/docker-entrypoint.sh"]
