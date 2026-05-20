@@ -19,8 +19,8 @@ COPY . /var/www/html/
 # إعطاء الصلاحيات المناسبة للملفات والمجلدات
 RUN chown -R www-data:www-data /var/www/html
 
-# جعل سكريبت الإقلاع قابل للتنفيذ
-RUN chmod +x /var/www/html/docker-entrypoint.sh
+# جعل سكريبت الإقلاع قابل للتنفيذ وإزالة أي أحرف Windows
+RUN sed -i 's/\r$//' /var/www/html/docker-entrypoint.sh && chmod +x /var/www/html/docker-entrypoint.sh
 
 # فتح المنفذ 80 الذي يشتغل عليه Apache تلقائياً
 EXPOSE 80
