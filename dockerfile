@@ -4,8 +4,9 @@ FROM php:8.2-apache
 # تفعيل موديل Rewrite الخاص بـ Apache (مهم جداً لتوجيه الروابط في PHP)
 RUN a2enmod rewrite
 
-# تثبيت الإضافات الخاصة بقاعدة البيانات MySQL لكي يتصل الكود بها
-RUN docker-php-ext-install pdo pdo_mysql mysqli
+# تثبيت الإضافات الخاصة بقاعدة البيانات PostgreSQL لكي يتصل الكود بها
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql pdo_mysql mysqli
 
 # تغيير مسار الـ DocumentRoot الخاص بـ Apache لكي يقرأ من مجلد public مباشرة
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
