@@ -4,27 +4,63 @@ namespace App\Core;
 
 class Database
 {
-    public \mysqli $conn;
+    public \PDO $conn;
 
     public function __construct(array $config)
     {
-        // Suppress warnings from mysqli connect, we handle it
-        mysqli_report(MYSQLI_REPORT_OFF);
-
-        $this->conn = @new \mysqli(
-            $config['host'] ?? 'localhost',
-            $config['user'] ?? 'root',
-            $config['password'] ?? '',
-            $config['dbname'] ?? 'emc_db',
-            $config['port'] ?? 3306
-        );
-
-        if ($this->conn->connect_error) {
-            // For now, simple die. In production, maybe log it.
-            die("Database Connection failed. Please make sure MySQL is running and the database 'emc_db' exists.");
+        // Try getting DATABASE_URL from environment (used by Render)
+        $dbUrl = getenv('DATABASE_URL');
+        if ($dbUrl) {
+            $parsedUrl = parse_url($dbUrl);
+            $driver = $parsedUrl['scheme'] === 'postgres' ? 'pgsql' : $parsedUrl['scheme'];
+            $host = $parsedUrl['host'];
+            $port = $parsedUrl['port'] ?? 5432;
+            $user = $parsedUrl['user'];
+            $password = $parsedUrl['pass'];
+            $dbname = ltrim($parsedUrl['path'], '/');
+            $dsn = "$driver:host=$host;port=$port;dbname=$dbname;sslmode=prefer";
+        } else {
+            $host = $config['host'] ?? 'localhost';
+            $port = $config['port'] ?? 5432;
+            $dbname = $config['dbname'] ?? 'emc_db';
+            $user = $config['user'] ?? 'root';
+            $password = $config['password'] ?? '';
+            $driver = $config['driver'] ?? 'pgsql';
+            $dsn = "$driver:host=$host;port=$port;dbname=$dbname;sslmode=prefer";
+            if ($driver === 'mysql') {
+                $dsn .= ";charset=utf8mb4";
+            }
         }
-        
-        $this->conn->set_charset("utf8mb4");
+
+        try {
+            $this->conn = new \PDO($dsn, $user, $password, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ]);
+            
+            // Auto-migrate tables if not exists
+            if ($driver === 'pgsql') {
+                $this->autoMigrate();
+            }
+        } catch (\PDOException $e) {
+            die("Database Connection failed: " . $e->getMessage());
+        }
+    }
+
+    private function autoMigrate()
+    {
+        try {
+            $res = $this->conn->query("SELECT to_regclass('public.users')");
+            if (!$res->fetchColumn()) {
+                $sqlPath = __DIR__ . '/../../database.sql';
+                if (file_exists($sqlPath)) {
+                    $sql = file_get_contents($sqlPath);
+                    $this->conn->exec($sql);
+                }
+            }
+        } catch (\Exception $e) {
+            // fail silently on migration errors
+        }
     }
 
     public function prepare($sql)
@@ -35,5 +71,10 @@ class Database
     public function query($sql)
     {
         return $this->conn->query($sql);
+    }
+
+    public function lastInsertId()
+    {
+        return $this->conn->lastInsertId();
     }
 }

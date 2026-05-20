@@ -23,32 +23,17 @@ class MedicalRecord extends Model
 
     public function save()
     {
-        // Ensure table exists
-        $sqlCreate = "CREATE TABLE IF NOT EXISTS medical_records (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            visit_id INT NOT NULL,
-            doctor_id INT NOT NULL,
-            diagnosis TEXT,
-            treatment_plan TEXT,
-            prescriptions TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE,
-            FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE RESTRICT
-        )";
-        Application::$app->db->query($sqlCreate);
-
         $sql = "INSERT INTO medical_records (visit_id, doctor_id, diagnosis, treatment_plan, prescriptions) 
                 VALUES (?, ?, ?, ?, ?)";
         $stmt = Application::$app->db->prepare($sql);
         if (!$stmt) return false;
         
-        $stmt->bind_param("iisss", 
+        return $stmt->execute([
             $this->visit_id, 
             $this->doctor_id, 
             $this->diagnosis, 
             $this->treatment_plan, 
             $this->prescriptions
-        );
-        return $stmt->execute();
+        ]);
     }
 }
