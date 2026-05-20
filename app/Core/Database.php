@@ -9,7 +9,7 @@ class Database
     public function __construct(array $config)
     {
         // Try getting DATABASE_URL from environment (used by Render)
-        $dbUrl = getenv('DATABASE_URL');
+        $dbUrl = $_SERVER['DATABASE_URL'] ?? $_ENV['DATABASE_URL'] ?? getenv('DATABASE_URL');
         if ($dbUrl) {
             $parsedUrl = parse_url($dbUrl);
             $driver = $parsedUrl['scheme'] === 'postgres' ? 'pgsql' : $parsedUrl['scheme'];
